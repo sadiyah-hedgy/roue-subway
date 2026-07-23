@@ -16,10 +16,10 @@ module.exports = {
     sousTitre: "Tourne la roue et tente de gagner !",
     // Logo officiel (version blanche de la charte) déjà intégré.
     logo: "img/logo-subway.png",
-    mentions: "Jeu gratuit sans obligation d'achat. 1 participation par adresse e-mail. Dans la limite des stocks disponibles.",
+    mentions: "Jeu gratuit sans obligation d'achat. 1 participation par adresse e-mail. Dans la limite des stocks disponibles. Le 25 juillet 2026.",
     // Coordonnées affichées / utilisées dans les e-mails et pages légales.
-    ville: "[VILLE DU RESTAURANT]",
-    emailContact: "contact@[VOTRE-DOMAINE].fr",
+    ville: "Saint-Denis",
+    emailContact: "secretariat@runradiophysique.com",
   },
 
   /* --- Charte graphique Subway (EMEA 2020) -------------------------------- */
@@ -75,8 +75,8 @@ module.exports = {
   // Les identifiants SMTP se mettent dans .env. Ici : expéditeur + activation.
   email: {
     actif: true,                       // false pour désactiver tout envoi
-    from: '"Subway" <no-reply@[VOTRE-DOMAINE].fr>',
-    repondreA: "contact@[VOTRE-DOMAINE].fr",
+    from: '"Subway - Ouverture" <secretariat@runradiophysique.com>',
+    repondreA: "secretariat@runradiophysique.com",
     objetGagnant: "🎉 Ton lot Subway — voici ta preuve",
     objetPerdant: "Merci d'avoir joué à la roue Subway !",
   },
