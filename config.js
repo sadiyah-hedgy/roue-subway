@@ -75,8 +75,8 @@ module.exports = {
   // Les identifiants SMTP se mettent dans .env. Ici : expéditeur + activation.
   email: {
     actif: true,                       // false pour désactiver tout envoi
-    from: '"Subway - Ouverture" <secretariat@runradiophysique.com>',
-    repondreA: "secretariat@runradiophysique.com",
+    from: '"Subway - Ouverture" <subway9741@gmail.com>',
+    repondreA: "subway9741@gmail.com",
     objetGagnant: "🎉 Ton lot Subway — voici ta preuve",
     objetPerdant: "Merci d'avoir joué à la roue Subway !",
   },
