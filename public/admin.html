@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin — Roue Subway</title>
+<style>
+  :root{--vert:#009A44;--vert-fonce:#007a36;--jaune:#FFC600;--texte:#0b3d1f;}
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;margin:0;background:#f2f6f3;color:var(--texte);padding:24px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{color:var(--vert-fonce);display:flex;align-items:center;gap:10px;}
+  .badge{background:var(--jaune);color:var(--texte);font-size:13px;padding:4px 10px;border-radius:20px;font-weight:700;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:18px 0;}
+  .kpi{background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.06);text-align:center;}
+  .kpi .n{font-size:32px;font-weight:900;color:var(--vert);}
+  .kpi .l{font-size:13px;color:#5c7767;margin-top:4px;}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.06);}
+  th,td{padding:12px 14px;text-align:left;font-size:14px;}
+  thead{background:var(--vert);color:#fff;}
+  tbody tr:nth-child(even){background:#f7faf8;}
+  .bar{height:8px;background:#e3ece6;border-radius:6px;overflow:hidden;margin-top:6px;}
+  .bar>span{display:block;height:100%;background:var(--vert);}
+  .empty{color:#c0392b;font-weight:700;}
+  .actions{margin:18px 0;display:flex;gap:12px;flex-wrap:wrap;}
+  .btn{background:var(--jaune);color:var(--texte);border:none;padding:12px 20px;border-radius:12px;font-weight:800;
+    cursor:pointer;text-decoration:none;display:inline-block;font-size:14px;}
+  .btn.sec{background:#fff;border:2px solid var(--vert);color:var(--vert-fonce);}
+  .login{background:#fff;padding:24px;border-radius:16px;max-width:360px;margin:60px auto;box-shadow:0 10px 30px rgba(0,0,0,.1);text-align:center;}
+  .login input{width:100%;padding:12px;border:2px solid #cfe3d6;border-radius:10px;margin:12px 0;font-size:15px;}
+  .muted{color:#7a8e82;font-size:12px;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="login" id="login">
+    <h1>🔒 Espace admin</h1>
+    <p>Entre la clé d'accès administrateur.</p>
+    <input type="password" id="cle" placeholder="Clé admin" />
+    <button class="btn" id="loginBtn">Entrer</button>
+    <p class="muted">Astuce : /admin?cle=TA-CLE</p>
+  </div>
+
+  <div id="dash" style="display:none;">
+    <h1>🥪 Roue Subway <span class="badge">Tableau de bord</span></h1>
+    <div class="grid" id="kpis"></div>
+    <div class="actions">
+      <a class="btn" id="csvLink" href="#">⬇ Exporter les participants (CSV)</a>
+      <button class="btn sec" id="refresh">↻ Rafraîchir</button>
+    </div>
+    <h2>Stock des lots</h2>
+    <table>
+      <thead><tr><th>Lot</th><th>Distribués</th><th>Restant</th><th style="width:35%">Épuisement</th></tr></thead>
+      <tbody id="stockBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $=(s)=>document.querySelector(s);
+  const params=new URLSearchParams(location.search);
+  let cle=params.get("cle")||"";
+
+  async function load(){
+    const r=await fetch("/api/admin/stats?cle="+encodeURIComponent(cle));
+    if(r.status===401){ $("#login").style.display="block"; $("#dash").style.display="none"; return false; }
+    const d=await r.json();
+    $("#login").style.display="none"; $("#dash").style.display="block";
+    $("#csvLink").href="/api/admin/export.csv?cle="+encodeURIComponent(cle);
+
+    $("#kpis").innerHTML=`
+      <div class="kpi"><div class="n">${d.totalParticipations}</div><div class="l">Participations</div></div>
+      <div class="kpi"><div class="n">${d.totalGagnants}</div><div class="l">Gagnants</div></div>
+      <div class="kpi"><div class="n">${d.totalPerdus}</div><div class="l">Perdus</div></div>
+      <div class="kpi"><div class="n">${d.participantsPrevus}</div><div class="l">Prévus</div></div>`;
+
+    $("#stockBody").innerHTML=d.stock.map(s=>{
+      const pct=Math.round((s.distribues/s.initial)*100);
+      return `<tr>
+        <td>${s.nom}</td>
+        <td>${s.distribues} / ${s.initial}</td>
+        <td class="${s.restant===0?'empty':''}">${s.restant===0?'ÉPUISÉ':s.restant}</td>
+        <td><div class="bar"><span style="width:${pct}%"></span></div></td>
+      </tr>`;
+    }).join("");
+    return true;
+  }
+
+  $("#loginBtn").addEventListener("click",()=>{ cle=$("#cle").value.trim(); load(); });
+  $("#cle").addEventListener("keydown",e=>{ if(e.key==="Enter"){ cle=$("#cle").value.trim(); load(); }});
+  $("#refresh").addEventListener("click",load);
+  if(cle) load(); else $("#login").style.display="block";
+})();
+</script>
+</body>
+</html>

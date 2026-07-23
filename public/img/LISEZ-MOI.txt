@@ -1,0 +1,2 @@
+# Dépose ici ton logo Subway officiel sous le nom : logo-subway.png
+# (ou change le chemin dans config.js -> event.logo)

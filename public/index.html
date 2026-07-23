@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Grande Ouverture Subway — La Roue</title>
+<style>
+  :root{
+    --vert:#009A44; --vert-fonce:#007a36; --jaune:#FFC600; --jaune-fonce:#e0ae00;
+    --blanc:#ffffff; --texte:#0b3d1f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--texte);
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,255,255,.25), transparent 45%),
+      linear-gradient(160deg, var(--vert) 0%, var(--vert-fonce) 100%);
+    display:flex;flex-direction:column;align-items:center;
+    padding:22px 16px 40px;overflow-x:hidden;
+  }
+  .header{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;margin-bottom:6px;}
+  .logo{height:60px;display:flex;align-items:center;justify-content:center;}
+  .logo img{height:60px;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25));}
+  .logo-fallback{
+    font-weight:900;font-size:40px;letter-spacing:-1px;color:var(--blanc);
+    text-shadow:0 3px 6px rgba(0,0,0,.25);
+  }
+  .logo-fallback .sub{color:var(--blanc);}
+  .logo-fallback .way{color:var(--jaune);}
+  h1{color:var(--jaune);font-size:26px;margin:2px 0 0;text-transform:uppercase;letter-spacing:1px;
+     text-shadow:0 2px 4px rgba(0,0,0,.3);}
+  .subtitle{color:var(--blanc);font-size:15px;opacity:.95;margin:0;font-weight:500;}
+
+  .card{
+    background:var(--blanc);border-radius:24px;padding:26px 22px;margin-top:20px;
+    width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.28);
+    display:flex;flex-direction:column;align-items:center;
+  }
+
+  /* --- ROUE --- */
+  .wheel-wrap{position:relative;width:100%;max-width:360px;aspect-ratio:1;margin:6px auto 4px;}
+  .pointer{
+    position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:5;
+    width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;
+    border-top:30px solid var(--jaune);filter:drop-shadow(0 3px 3px rgba(0,0,0,.35));
+  }
+  canvas#wheel{width:100%;height:100%;border-radius:50%;
+    box-shadow:0 0 0 10px var(--jaune), 0 0 0 15px var(--vert-fonce), 0 14px 30px rgba(0,0,0,.35);
+    transition:transform 6s cubic-bezier(.16,.84,.3,1);}
+  .hub{position:absolute;top:50%;left:50%;width:54px;height:54px;transform:translate(-50%,-50%);
+    background:var(--blanc);border-radius:50%;z-index:4;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 8px rgba(0,0,0,.3);border:4px solid var(--jaune);font-size:24px;}
+
+  /* --- FORM --- */
+  .lead{font-size:15px;text-align:center;margin:4px 0 14px;line-height:1.45;color:#274b34;}
+  label{align-self:flex-start;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--vert-fonce);}
+  input[type=email]{
+    width:100%;padding:15px 16px;font-size:16px;border:2px solid #cfe3d6;border-radius:14px;outline:none;
+    transition:border-color .15s;margin-bottom:6px;}
+  input[type=email]:focus{border-color:var(--vert);}
+  .consent{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:#4a6b57;margin:10px 0 16px;line-height:1.4;}
+  .consent input{margin-top:2px;width:16px;height:16px;accent-color:var(--vert);flex:none;}
+  .consent a{color:var(--vert-fonce);font-weight:600;}
+  .footer-links{color:rgba(255,255,255,.9);font-size:12px;text-align:center;margin-top:14px;}
+  .footer-links a{color:#fff;text-decoration:underline;margin:0 6px;}
+  .err{color:#c0392b;font-size:13px;min-height:18px;margin:-2px 0 8px;font-weight:600;text-align:center;width:100%;}
+
+  .btn{
+    border:none;cursor:pointer;font-weight:800;font-size:17px;padding:16px 24px;border-radius:14px;
+    width:100%;text-transform:uppercase;letter-spacing:.5px;transition:transform .08s, filter .15s;}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--jaune);color:var(--texte);box-shadow:0 6px 0 var(--jaune-fonce);}
+  .btn-primary:hover{filter:brightness(1.03);}
+  .btn-primary:disabled{background:#e6e6e6;color:#9a9a9a;box-shadow:0 6px 0 #cccccc;cursor:not-allowed;}
+
+  /* --- RESULT --- */
+  .result{text-align:center;display:none;animation:pop .4s ease;}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .result .emoji{font-size:64px;line-height:1;margin-bottom:6px;}
+  .result h2{margin:6px 0;font-size:24px;color:var(--vert-fonce);}
+  .result .lot{font-size:22px;font-weight:900;color:var(--vert);margin:2px 0 10px;}
+  .code-box{background:var(--jaune);border-radius:14px;padding:14px 16px;margin:14px 0;}
+  .code-box .lab{font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--texte);opacity:.8;}
+  .code-box .code{font-size:26px;font-weight:900;letter-spacing:2px;color:var(--texte);font-family:'Courier New',monospace;}
+  .result p{font-size:14px;color:#436b52;line-height:1.5;}
+
+  .mentions{color:rgba(255,255,255,.8);font-size:11px;text-align:center;max-width:440px;margin-top:22px;line-height:1.5;}
+  .hidden{display:none!important;}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo" id="logo"></div>
+    <h1 id="titre">Grande Ouverture</h1>
+    <p class="subtitle" id="sousTitre">Tourne la roue et tente de gagner !</p>
+  </div>
+
+  <div class="card">
+    <!-- Etape roue + formulaire -->
+    <div id="jeu">
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="700" height="700"></canvas>
+        <div class="hub">🥪</div>
+      </div>
+
+      <p class="lead">Entre ton e-mail pour jouer.<br>Un seul tour par personne — bonne chance !</p>
+      <label for="email">Ton adresse e-mail</label>
+      <input type="email" id="email" placeholder="prenom@email.com" autocomplete="email" inputmode="email" />
+      <div class="consent">
+        <input type="checkbox" id="consentReglement" />
+        <span>J'ai lu et j'accepte le <a id="lienReglement" href="/reglement" target="_blank">règlement du jeu</a>
+        et la <a id="lienConfid" href="/confidentialite" target="_blank">politique de confidentialité</a>. <b>*</b></span>
+      </div>
+      <div class="consent">
+        <input type="checkbox" id="consentNews" />
+        <span>J'accepte de recevoir les actualités et offres du restaurant Subway par e-mail (facultatif).</span>
+      </div>
+      <div class="err" id="err"></div>
+      <button class="btn btn-primary" id="spinBtn">Faire tourner la roue</button>
+      <p style="font-size:11px;color:#8aa;text-align:center;margin:12px 0 0;">La preuve de ton lot t'est envoyée par e-mail.</p>
+    </div>
+
+    <!-- Etape resultat -->
+    <div class="result" id="result">
+      <div class="emoji" id="rEmoji">🎉</div>
+      <h2 id="rTitre">Félicitations !</h2>
+      <div class="lot" id="rLot"></div>
+      <div class="code-box hidden" id="codeBox">
+        <div class="lab">Ton code de preuve</div>
+        <div class="code" id="rCode"></div>
+      </div>
+      <p id="rMsg"></p>
+    </div>
+  </div>
+
+  <p class="mentions" id="mentions"></p>
+  <div class="footer-links" id="footerLinks"></div>
+
+<script>
+(function(){
+  const $ = (s)=>document.querySelector(s);
+  let CONFIG=null, SEGMENTS=[], anglePerSeg=0, currentRotation=0, spinning=false;
+  const canvas=$("#wheel"), ctx=canvas.getContext("2d");
+  const R=canvas.width/2;
+
+  function applyCouleurs(c){
+    const r=document.documentElement.style;
+    r.setProperty("--vert",c.vert); r.setProperty("--vert-fonce",c.vertFonce);
+    r.setProperty("--jaune",c.jaune); r.setProperty("--jaune-fonce",c.jauneFonce);
+    r.setProperty("--texte",c.texteFonce);
+  }
+
+  // Construit les segments : 1 segment par lot, entrecoupe de segments "Dommage".
+  function buildSegments(cfg){
+    const segs=[];
+    cfg.lots.forEach((lot)=>{
+      segs.push({type:"lot", id:lot.id, nom:lot.nom, couleur:lot.couleur, texte:lot.couleurTexte, emoji:lot.emoji});
+      segs.push({type:"perdu", id:"perdu", nom:cfg.perdu.nom, couleur:cfg.perdu.couleur, texte:cfg.perdu.couleurTexte, emoji:cfg.perdu.emoji});
+    });
+    return segs;
+  }
+
+  function drawWheel(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const n=SEGMENTS.length; anglePerSeg=(2*Math.PI)/n;
+    for(let i=0;i<n;i++){
+      const seg=SEGMENTS[i];
+      const start=i*anglePerSeg - Math.PI/2 - anglePerSeg/2;
+      const end=start+anglePerSeg;
+      ctx.beginPath(); ctx.moveTo(R,R);
+      ctx.arc(R,R,R-4,start,end); ctx.closePath();
+      ctx.fillStyle=seg.couleur; ctx.fill();
+      ctx.lineWidth=3; ctx.strokeStyle="rgba(255,255,255,.65)"; ctx.stroke();
+      // Texte
+      ctx.save();
+      ctx.translate(R,R); ctx.rotate(start+anglePerSeg/2);
+      ctx.textAlign="right"; ctx.fillStyle=seg.texte;
+      ctx.font="bold 30px 'Segoe UI',sans-serif";
+      const label=seg.type==="lot"?seg.nom:"Dommage";
+      ctx.fillText(label, R-38, 6);
+      ctx.font="34px serif";
+      ctx.fillText(seg.emoji, R-40, 44);
+      ctx.restore();
+    }
+  }
+
+  // Trouve l'index d'un segment correspondant au resultat serveur.
+  function segIndexFor(lotId){
+    const matches=[];
+    SEGMENTS.forEach((s,i)=>{ if(s.id===lotId) matches.push(i); });
+    if(matches.length===0){ // secu : renvoie un perdu
+      SEGMENTS.forEach((s,i)=>{ if(s.type==="perdu") matches.push(i); });
+    }
+    return matches[Math.floor(Math.random()*matches.length)];
+  }
+
+  function spinTo(index, cb){
+    // Le pointeur est en haut. On aligne le centre du segment "index" en haut.
+    const tours=5; // tours complets pour l'effet
+    const cible = index*anglePerSeg; // rotation qui amene le segment sous le pointeur
+    // rotation totale (sens horaire) : on retire "cible" pour aligner + tours complets
+    const base = currentRotation - (currentRotation % (2*Math.PI));
+    const finalRot = base + tours*2*Math.PI - cible;
+    currentRotation = finalRot;
+    canvas.style.transform = `rotate(${finalRot}rad)`;
+    setTimeout(cb, 6200);
+  }
+
+  function showError(m){ $("#err").textContent=m||""; }
+
+  function showResult(resultat){
+    $("#jeu").style.display="none";
+    const box=$("#result"); box.style.display="block";
+    if(resultat.gagnant){
+      $("#rEmoji").textContent="🎉";
+      $("#rTitre").textContent="Félicitations !";
+      $("#rLot").textContent="Tu gagnes : "+resultat.lot_nom;
+      $("#codeBox").classList.remove("hidden");
+      $("#rCode").textContent=resultat.code;
+      $("#rMsg").innerHTML="Garde bien ce code : il te servira de preuve pour récupérer ton lot.<br>Une confirmation te sera envoyée par e-mail.";
+    }else{
+      $("#rEmoji").textContent="😊";
+      $("#rTitre").textContent="Merci d'avoir joué !";
+      $("#rLot").textContent="";
+      $("#codeBox").classList.add("hidden");
+      $("#rMsg").textContent=CONFIG.perdu.message;
+    }
+  }
+
+  async function doSpin(){
+    if(spinning) return;
+    const email=$("#email").value.trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showError("Entre une adresse e-mail valide."); return; }
+    if(!$("#consentReglement").checked){ showError("Merci d'accepter le règlement pour participer."); return; }
+    const newsletter=$("#consentNews").checked;
+    showError(""); spinning=true; $("#spinBtn").disabled=true; $("#spinBtn").textContent="La roue tourne…";
+
+    try{
+      const r=await fetch("/api/spin",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email, reglement:true, newsletter})});
+      const data=await r.json();
+
+      if(!data.ok){
+        if(data.raison==="deja_joue" && data.resultat){
+          // rejoue impossible : on montre directement le resultat precedent
+          const idx=segIndexFor(data.resultat.lot_id);
+          spinTo(idx, ()=>showResult(data.resultat));
+          return;
+        }
+        showError(data.message||"Une erreur est survenue."); resetBtn(); return;
+      }
+      const idx=segIndexFor(data.resultat.lot_id);
+      spinTo(idx, ()=>showResult(data.resultat));
+    }catch(e){
+      showError("Connexion impossible. Réessaie."); resetBtn();
+    }
+  }
+  function resetBtn(){ spinning=false; $("#spinBtn").disabled=false; $("#spinBtn").textContent="Faire tourner la roue"; }
+
+  async function init(){
+    const cfg=await (await fetch("/api/config")).json();
+    CONFIG=cfg;
+    applyCouleurs(cfg.couleurs);
+    // Logo
+    const logo=$("#logo");
+    if(cfg.event.logo){
+      const img=new Image();
+      img.onload=()=>{ logo.innerHTML=""; logo.appendChild(img); };
+      img.onerror=()=>{ logo.innerHTML='<span class="logo-fallback"><span class="sub">SUB</span><span class="way">WAY</span></span>'; };
+      img.src=cfg.event.logo; img.alt="Subway";
+    }else{
+      logo.innerHTML='<span class="logo-fallback"><span class="sub">SUB</span><span class="way">WAY</span></span>';
+    }
+    $("#titre").textContent=cfg.event.titre||"Grande Ouverture";
+    $("#sousTitre").textContent=cfg.event.sousTitre||"";
+    $("#mentions").textContent=cfg.event.mentions||"";
+    // Liens légaux
+    const L=cfg.liens||{};
+    if(L.reglement) $("#lienReglement").href=L.reglement;
+    if(L.confidentialite) $("#lienConfid").href=L.confidentialite;
+    $("#footerLinks").innerHTML=
+      `<a href="${L.reglement||'/reglement'}" target="_blank">Règlement du jeu</a>·`+
+      `<a href="${L.confidentialite||'/confidentialite'}" target="_blank">Confidentialité (RGPD)</a>·`+
+      `<a href="${L.mentionsLegales||'/mentions-legales'}" target="_blank">Mentions légales</a>`;
+    SEGMENTS=buildSegments(cfg);
+    drawWheel();
+    $("#spinBtn").addEventListener("click",doSpin);
+    $("#email").addEventListener("keydown",(e)=>{ if(e.key==="Enter") doSpin(); });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
