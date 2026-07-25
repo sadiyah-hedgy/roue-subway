@@ -61,6 +61,7 @@ for (const lot of config.lots) initStock.run(lot.id, lot.nom, lot.stock);
 const qFindEmail  = db.prepare("SELECT * FROM participations WHERE email = ?");
 const qGetStock   = db.prepare("SELECT lot_id, restant FROM stock");
 const qDecrement  = db.prepare("UPDATE stock SET restant = restant - 1 WHERE lot_id = ? AND restant > 0");
+const qSetStock   = db.prepare("UPDATE stock SET restant = ? WHERE lot_id = ?");
 const qInsertPart = db.prepare(
   "INSERT INTO participations (email, lot_id, lot_nom, gagnant, code, newsletter, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
 );
@@ -239,6 +240,30 @@ app.get("/api/admin/export.csv", (req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", 'attachment; filename="participants-subway.csv"');
   res.send("﻿" + lignes.join("\n")); // BOM pour Excel
+});
+
+// Mise à jour manuelle des quantités restantes (comptage au restaurant).
+app.post("/api/admin/stock", (req, res) => {
+  if (!adminAutorise(req)) return res.status(401).json({ ok: false });
+  const updates = (req.body && req.body.updates) || [];
+  if (!Array.isArray(updates)) return res.status(400).json({ ok: false, message: "Format invalide" });
+  const valides = new Set(config.lots.map((l) => l.id));
+  try {
+    db.exec("BEGIN IMMEDIATE;");
+    for (const u of updates) {
+      const id = String(u && u.lot_id);
+      let r = parseInt(u && u.restant, 10);
+      if (!valides.has(id) || !Number.isFinite(r) || r < 0) continue;
+      if (r > 100000) r = 100000;
+      qSetStock.run(r, id);
+    }
+    db.exec("COMMIT;");
+  } catch (e) {
+    try { db.exec("ROLLBACK;"); } catch (_) {}
+    console.error("Erreur /api/admin/stock :", e);
+    return res.status(500).json({ ok: false });
+  }
+  res.json({ ok: true, stock: qGetStock.all() });
 });
 
 app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
